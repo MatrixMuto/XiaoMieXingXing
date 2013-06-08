@@ -1,24 +1,33 @@
 package com.example.xiaomiexingxing;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 
+import com.example.xiaomiexingxing.Utils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Point;
 import android.util.Log;
-import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 	int ACTIVITY_SELECT_IMAGE = 0x1001;
@@ -28,27 +37,49 @@ public class MainActivity extends Activity {
 	Bitmap yourSelectedImage = null;
 	Bitmap map = null;
 	int stars[][] = new int[10][10];
-	Handler handler = new Handler();
+	//int[] stars = new int[10*10];//改用一维数组来标识
+	LinkedList<int[][]> curStack = new  LinkedList<int[][]>();
+	LinkedList<int[][]> bestStack = new  LinkedList<int[][]>();
+	protected ListIterator bestIter;
+	TextView stv = null;
+	int qMaxScore = 0;
+	int[][] groupId = new int[10][10];
+	public boolean mIamOk;
+	public static final String TAG = "XMXX";
+	Handler handler = new Handler(){
+			
+		public void handleMessage(android.os.Message msg) {
+			Log.d(TAG,"msg " + msg.what);
+			if (msg.what == 1) 
+				Utils.drawStars(true,imgView,stars,groupId);
+			else if (msg.what == 2)
+				Utils.drawStars(false,imgView,stars,groupId);
+			else if (msg.what == 3)
+				stv.setText(""+msg.arg1);
+		};
+	};
+	protected int shangci = 0;
+	private String filePath;
+	
+
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		imgView = (ImageView) findViewById(R.id.imageView1);
 		imgView2 = (ImageView) findViewById(R.id.imageView2);
-		
-		
-		
-		//06-07 15:55:44.008: D/(18432): /storage/emulated/0/Pictures/Screenshots/Screenshot_2013-06-07-14-37-12.png
-		String path = "/storage/emulated/0/Pictures/Screenshots/Screenshot_2013-06-07-19-16-16.png";
+		stv = (TextView) findViewById(R.id.textView1);
+		filePath = "/storage/emulated/0/Pictures/Screenshots/Screenshot_2013-06-08-14-22-42.png";
 
-		init(path);
+		init(filePath);
 		
 		Button btn = (Button) findViewById(R.id.button1);
 		btn.setOnClickListener(new OnClickListener() {
 			
 			@Override
 			public void onClick(View arg0) {
-				Log.d("","btn");
+				Log.d(TAG,"btn");
 				// TODO Auto-generated method stub
 				Intent i = new Intent(Intent.ACTION_PICK,android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 	
@@ -60,36 +91,15 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(View arg0) {
-				// TODO Auto-generated method stub
-				int[] bData = new int[700*700];
-				int ww = 60;
-				int hh = 60;
-				for (int i=0;i<10;i++)
-				{
-					String colors = "";
-					for (int j=0;j<10;j++)
-					{
-						colors += stars[j][i];
-						//int x = j*30;
-						//int y = i*30;
-						//bData[i*300*30+j*30] = Color.RED;
-						int c = stars[j][i] == xRED ? Color.RED
-								: stars[j][i] == xYELLOW ? Color.YELLOW
-								: stars[j][i] == xBLUE ? Color.BLUE
-								: stars[j][i] == xGREEN ? Color.GREEN
-								: stars[j][i] == xMagenta ? Color.MAGENTA
-								: Color.BLACK;
-						for (int x=0; x<ww; x++) {
-							for (int y=0;y<hh;y++)
-							{
-								bData[i*ww*10*hh + y*ww*10+ (j*ww) + x] = c;
-							}
-						}
-					}
-					Log.d("",colors);
+			   //for(int x=0; x<10;x++)
+					//System.arraycopy(bakStar[x], 0, stars[x], 0, 10);
+				if (shangci == 1) bestIter.previous();
+				shangci = 2;
+				if (bestIter.hasPrevious()) {
+					int[][] _stars = (int[][])bestIter.previous();
+					Utils.drawStars(false,imgView,_stars,groupId);
 				}
-				Bitmap backBmp = Bitmap.createBitmap(bData, ww*10, hh*10, Bitmap.Config.ARGB_8888);
-				imgView.setImageBitmap(backBmp);
+				//Utils.drawStars(false,imgView,stars,groupId);
 			}
 		});
 		Button btnNext = (Button) findViewById(R.id.button3);
@@ -98,61 +108,44 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View arg0) {
 				// TODO Auto-generated method stub
+				if (shangci == 2) bestIter.next();
+				shangci = 1;
+				
+				if (bestIter.hasNext()) {
+					int[][] _stars = (int[][])bestIter.next();
+					Utils.drawStars(false,imgView,_stars,groupId);
+				}
+			}
+		});
+		Button btnStar = (Button) findViewById(R.id.button4);
+		btnStar.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				init(filePath);
+				for (int i=0;i<10;i++)
+				{
+					for (int j=0;j<10;j++)
+					{
+						if (stars[j][i] == 6) stars[j][i] = 0;
+					}
+				}
 				XiaoMieXX x = new XiaoMieXX(stars);
 				x.start();
 			}
 		});
-	}
-	final int xNONE = 0;
-	final int xRED = 1;
-	final int xYELLOW = 2;
-	final int xBLUE = 3;
-	final int xGREEN = 4;
-	final int xMagenta = 5;
-	final int xUNKNOWN = 6;
-	
-	private int getColor(int pix) {
-		// TODO Auto-generated method stub
-		int r = pix >> 16 & 0xFF;
-		int g = pix >> 8 & 0xFF;
-		int b = pix & 0xFF;
-		if  ( (r >= 0xde && r <=0xe1)
-			 && (g >= 0x3a && g <= 0x3f)
-			 && (b >= 0x3e && b <= 0x44) )
-			return xRED;
-		if  ( (r >= 0xd2 && r <=0xd4)
-				 && (g >= 0xd0 && g <= 0xd4)
-				 && (b >= 0x42 && b <= 0x46) )
-			return xYELLOW;
-		if  ( (r >= 0x56 && r <=0x5f)
-				 && (g >= 0x8e && g <= 0x95)
-				 && (b >= 0xd6 && b <= 0xdb) )
-			return xBLUE;
-		if  ( (r >= 0x44 && r <=0x4a)
-				 && (g >= 0xc5 && g <= 0xc9)
-				 && (b >= 0x37 && b <= 0x3d) )
-			return xGREEN;
-		if  ( (r >= 0xc6 && r <=0xca)
-				 && (g >= 0x35 && g <= 0x3a)
-				 && (b >= 0xbc && b <= 0xbf) )
-			return xMagenta;
-		
-		return xUNKNOWN;
+		Button btnStop = (Button) findViewById(R.id.button5);
+		btnStop.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View arg0) {
+				mIamOk = true;
+			}
+		});
 	}
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
-		return true;
-	}
 	private void init(String path)
 	{
 	    yourSelectedImage = BitmapFactory.decodeFile(path);
-	    //imgView.setImageBitmap(yourSelectedImage);
-	    int w = yourSelectedImage.getWidth();
-	    int h = yourSelectedImage.getHeight();
-
 		if (yourSelectedImage!=null) {
 			int[] pixels = new int[720*720];
 			yourSelectedImage.getPixels(pixels, 0, 720, 0, 463, 720, 720);
@@ -161,11 +154,6 @@ public class MainActivity extends Activity {
 			imgView2.setImageBitmap(map);
 		}	
 		
-		Log.d("",String.format("red=%x",Color.RED));
-		Log.d("",String.format("yellow=%x",Color.YELLOW));
-		Log.d("",String.format("green=%x",Color.GREEN));
-		Log.d("",String.format("blue=%x",Color.BLUE));
-		//Log.d("",String.format("=%x",Color.));
 		for (int i=0;i<10;i++)
 		{
 			int y = i*72;
@@ -174,46 +162,13 @@ public class MainActivity extends Activity {
 			{
 				int x =j*72;
     			int pix = map.getPixel(x+40, y+40) & 0xFFFFFF;
-				//pix = pix & 0x00FFFFFF;
 				colors+=String.format("%x",pix) + " ";
-				//colors += "("+(pix >>16 &0xFF) + ",";
-				stars[j][i] = getColor(pix);
-				
-				//colors += (pix >>8 &0xFF) + ",";
-				//colors +=  (pix & 0xFF) + ")";
+				stars[j][i] = Utils.getColor(pix);
 			}
-			Log.d("",colors);
+			Log.d(TAG,colors);
 		}
 		
-		int[] bData = new int[700*700];
-		int ww = 60;
-		int hh = 60;
-		for (int i=0;i<10;i++)
-		{
-			String colors = "";
-			for (int j=0;j<10;j++)
-			{
-				colors += stars[j][i];
-				//int x = j*30;
-				//int y = i*30;
-				//bData[i*300*30+j*30] = Color.RED;
-				int c = stars[j][i] == xRED ? Color.RED
-						: stars[j][i] == xYELLOW ? Color.YELLOW
-						: stars[j][i] == xBLUE ? Color.BLUE
-						: stars[j][i] == xGREEN ? Color.GREEN
-						: stars[j][i] == xMagenta ? Color.MAGENTA
-						: Color.BLACK;
-				for (int x=0; x<ww; x++) {
-					for (int y=0;y<hh;y++)
-					{
-						bData[i*ww*10*hh + y*ww*10+ (j*ww) + x] = c;
-					}
-				}
-			}
-			Log.d("",colors);
-		}
-		Bitmap backBmp = Bitmap.createBitmap(bData, ww*10, hh*10, Bitmap.Config.ARGB_8888);
-		imgView.setImageBitmap(backBmp);
+		Utils.drawStars(false,imgView,stars,groupId);
 	}
 	
 	protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) { 
@@ -229,43 +184,15 @@ public class MainActivity extends Activity {
 	            cursor.moveToFirst();
 
 	            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-	            String filePath = cursor.getString(columnIndex);
+	            filePath = cursor.getString(columnIndex);
 	            cursor.close();
 
-	           Log.d("",filePath);
+	           Log.d(TAG,filePath);
 	           init(filePath);
 	        }
 	    }
 	}
-	class StarInfo {
-		int nRed;
-		int nYellow;
-		int nGreen;
-		int nBlue;
-		int nMagenta;
-		int total;
-		
-		public int maxHighScore()
-		{
-			int maxScore = 0;
-			int remain = 0;
-			
-			if (nRed>1) maxScore += nRed*nRed*5;
-			else remain+=1;
-			if (nYellow>1) maxScore += nYellow*nYellow*5;
-			else remain+=1;
-			if (nGreen>1) maxScore += nGreen*nGreen*5;
-			else remain+=1;
-			if (nBlue>1) maxScore += nBlue*nBlue*5;
-			else remain+=1;
-			if (nMagenta>1) maxScore += nMagenta*nMagenta*5;
-			else remain+=1;
-			
-			maxScore+= 2000-remain*remain*20;
-			return maxScore;
-		}
-		
-	};
+
 	class XiaoMieXX extends Thread {
 		int[][] mStars ;
 		public XiaoMieXX(int[][] stars){
@@ -277,30 +204,113 @@ public class MainActivity extends Activity {
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			fun(0);
-			Log.e("","xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+			mIamOk = false;
+			qMaxScore= 0 ;
+			fun(0,0);
+			Log.e(TAG, qMaxScore+" "+"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+			handler.post(new Runnable() {
+				
+				@Override
+				public void run() {
+					// TODO Auto-generated method stub
+					Toast.makeText(getApplicationContext(), "结束搜索了",
+						     Toast.LENGTH_SHORT).show();	
+				}
+			});
 			super.run();
 		}
 		
-		void fun(int depth){
-			Log.d("","fun"+depth);
-			int remain = findAll();
+		void fun(int depth,int curScore){
+			Log.d(TAG,"fun"+depth+"cur:"+curScore
+					+" high:"+qMaxScore 
+					+" curS:"+curStack.size()
+					+" bestS:"+bestStack.size());
+			//Utils.showStarsInLog(mStars);
+			if (mIamOk) return ;
+			HashMap<Integer, LinkedList<Point> > gro = new HashMap<Integer, LinkedList<Point> >();
+			int remain = findAll(gro);
+			
+			int[][] bakStar = new int[10][10];
+			for(int x=0; x<10;x++)
+				System.arraycopy(mStars[x], 0, bakStar[x], 0, 10);
+			curStack.addLast(bakStar);
+			
 			//Log.d("","remain="+remain);
-			if (remain == 0) return;
+			if (gro.size() == 0) 
+			{
+				int remainStar = 0;
+				for(int x=0;x<10;x++)
+					for(int y=0;y<10;y++)
+					{
+						if (mStars[x][y] != 0)
+							remainStar++;
+					}
+				
+				int myScore = curScore;
+				myScore += remainStar<10 ?(2000-remainStar*remainStar*20):0;
+				if (myScore > qMaxScore)
+					qMaxScore = myScore;
+				if (qMaxScore >=4000) mIamOk = true;
+				Message msg = handler.obtainMessage(3, qMaxScore, 0);
+			    handler.sendMessage(msg);
+			    //handler.sendEmptyMessage(2);
+			    bestStack.clear();
+				for (int[][] ooo:curStack) {
+					int[][] uuu = new int[10][10];
+					for(int x=0; x<10;x++)
+						System.arraycopy(ooo[x], 0, uuu[x], 0, 10);
+					bestStack.addLast(uuu);
+					//Utils.showStarsInLog(mStars);
+				}
+				bestIter = bestStack.listIterator();
+				curStack.removeLast();
+				return;
+			}
+	
+		
+//			Iterator iter = gro.entrySet().iterator(); 
+//			while (iter.hasNext()) { 
+//			    Map.Entry entry = (Map.Entry) iter.next(); 
+//			    Integer key = (Integer) entry.getKey(); 
+//			    LinkedList<Point> val = (LinkedList<Point>) entry.getValue(); 
+//			    
+//			    remove(val);
+//				
+//			    int newScore = curScore + val.size() * val.size()*5;
+//				fun(depth+1,newScore);
+//			    
+//			    for(int x=0; x<10;x++)
+//					System.arraycopy(bakStar[x], 0, mStars[x], 0, 10);
+//			} 
 			
+			Set<Entry<Integer, LinkedList<Point>>> aa = gro.entrySet(); 
+			Random random = new Random();
+			while (!aa.isEmpty()) {
+				
+				Iterator iter = aa.iterator();
+				int time = random.nextInt(aa.size());
+				for (int i=0;i<time;i++) {
+					iter.next();
+				}
+			    Map.Entry entry = (Map.Entry) iter.next(); 
+			    Integer key = (Integer) entry.getKey(); 
+			    LinkedList<Point> val = (LinkedList<Point>) entry.getValue(); 
+			    gro.remove(key);
+			    aa= gro.entrySet();
+			    remove(val);
+				
+			    int newScore = curScore + val.size() * val.size()*5;
+				fun(depth+1,newScore);
+			    
+			    for(int x=0; x<10;x++)
+					System.arraycopy(bakStar[x], 0, mStars[x], 0, 10);
+			} 
+			curStack.removeLast();
 			
-			remove(0,0);
-			
-			fun(depth+1);
-			
-			restore(0,0);
-			
-			fun(depth+1);
 		}
 		
-		int findAll(){
+		int findAll(HashMap<Integer, LinkedList<Point>> gro){
 			int maxGID = 0;
-			int[][] groupId = new int[10][10];
 			for (int x=0;x<10;x++)
 				for (int y=0;y<10;y++)
 					groupId[x][y] = -1;
@@ -308,19 +318,57 @@ public class MainActivity extends Activity {
 				for (int y=0;y<10;y++)
 				{
 					int c = mStars[x][y];
+					if (c < Utils.xRED || c > Utils.xMagenta) continue;
 					int g = groupId[x][y];
 					
 					if (y+1<10 && c == mStars[x][y+1])
 					{
-						if (g ==-1)
+						if (g ==-1 && groupId[x][y+1] == -1)
 						{
 							groupId[x][y] = maxGID;
 							groupId[x][y+1] = maxGID;
-							maxGID++;
+							
+							LinkedList<Point> list = new LinkedList<Point>();
+							list.add(new Point(x,y));
+							list.add(new Point(x,y+1));
+							gro.put(maxGID, list);
+							
+							maxGID++;	
 						}
-						else 
+						else if (g ==-1 && groupId[x][y+1]!=-1) {
+							groupId[x][y] = groupId[x][y+1];
+							gro.get(groupId[x][y+1]).add(new Point(x,y));
+						}
+						else if (g!=-1 && groupId[x][y+1]==-1){
+							
 							groupId[x][y+1] = g;
+							
+							gro.get(g).add(new Point(x,y+1));
+						}
+						else {
+							//int a = 1 / 0;
+							int a = g;
+							int b = groupId[x][y+1];
+							Log.d(TAG,"a="+a+" b="+b);
+							if (a>b) {
+								for(Point p: gro.get(a)){
+									groupId[p.x][p.y] = b;
+									gro.get(b).add(p);
+								}
+								gro.remove(a);
+							}
+							else if (a<b){
+								for(Point p: gro.get(b)){
+									groupId[p.x][p.y] = a;
+									gro.get(a).add(p);
+								}
+								gro.remove(b);
+							}
+						
+							Log.e(TAG,"error error error error error error ");
+						}
 					}
+					
 					g = groupId[x][y];
 					if (x+1<10 && c == mStars[x+1][y])
 					{
@@ -328,57 +376,78 @@ public class MainActivity extends Activity {
 						{
 							groupId[x][y] = maxGID;
 							groupId[x+1][y] = maxGID;
+							
+							LinkedList<Point> list = new LinkedList<Point>();
+							list.add(new Point(x,y));
+							list.add(new Point(x+1,y));
+							gro.put(maxGID, list);
+							
 							maxGID++;
 						}
-						else 
+						else {
 							groupId[x+1][y] = g;
-					}
-				}
-			
-			final int[] bData = new int[700*700];
-			final int ww = 60;
-			final int hh = 60;
-			for (int i=0;i<10;i++)
-			{
-				String colors = "";
-				for (int j=0;j<10;j++)
-				{
-					colors += stars[j][i];
-					//int x = j*30;
-					//int y = i*30;
-					//bData[i*300*30+j*30] = Color.RED;
-					int c = stars[j][i] == xRED ? Color.RED
-							: stars[j][i] == xYELLOW ? Color.YELLOW
-							: stars[j][i] == xBLUE ? Color.BLUE
-							: stars[j][i] == xGREEN ? Color.GREEN
-							: stars[j][i] == xMagenta ? Color.MAGENTA
-							: Color.BLACK;
-					if (groupId[j][i]==-1) c = Color.BLACK;
-					for (int x=0; x<ww; x++) {
-						for (int y=0;y<hh;y++)
-						{
-							bData[i*ww*10*hh + y*ww*10+ (j*ww) + x] = c;
+							gro.get(g).add(new Point(x+1,y));
 						}
 					}
 				}
-				Log.d("",colors);
-			}
+//			for (int y=0;y<10;y++) {
+//				String gro1  ="";
+//				for (int x=0;x<10;x++)
+//				{
+//					gro1 += groupId[x][y] + " ";
+//				}
+//				Log.d(TAG,gro1);
+//			}
+			Log.d(TAG,"we have "+gro.size()+" choices!");
+		//handler.sendEmptyMessage(1);
 			
-			handler.post(new Runnable(){
-
-				@Override
-				public void run() {
-					// TODO Auto-generated method stub
-					Bitmap backBmp = Bitmap.createBitmap(bData, ww*10, hh*10, Bitmap.Config.ARGB_8888);
-					imgView.setImageBitmap(backBmp);
-				}});
+		
 			return 0;
 		}
-		void remove(int x, int y){
+		
+
+
+		void remove(LinkedList<Point> list){
+//			Log.d(TAG,"remove in");
+			for ( Point p : list){
+				mStars[p.x][p.y] = 0;
+			}
 			
+			//纵向清理方块
+			for(int x =0; x<10; x++) {
+				int m = 9;
+				for (int y=9; y>=0; y--){
+					if (mStars[x][y] != 0)
+					{
+						mStars[x][m] = mStars[x][y];
+						m--;
+					}
+				}
+				for(int y=m; y>=0; y--)
+				{
+					mStars[x][y] = 0;
+				}
+			}
+			//横向清理方块
+			int n = 0;
+			for(int x =0; x<10; x++) {
+				if (mStars[x][9] != 0){
+					for (int y=0;y<10;y++) mStars[n][y] = mStars[x][y];
+					n++;
+				}
+			}
+			for (int x=n;x<10;x++){
+				for (int y=0;y<10;y++) mStars[x][y] = 0;
+			}
+			
+			//handler.sendEmptyMessage(2);
+//			Log.d(TAG,"remove out");
 		}
 		void restore(int x, int y){
 			
 		}
 	}
+	
+	
+
 }
