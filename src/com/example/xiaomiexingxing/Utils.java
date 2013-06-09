@@ -47,7 +47,7 @@ public class Utils {
 		}
 		
 	};
-	public static void showStarsInLog(int depth, int[][] stars)
+	public static String showStarsInLog(int depth, int[][] stars)
 	{
 		String colors = "";
 		for (int i=0;i<10;i++)
@@ -57,7 +57,20 @@ public class Utils {
 				colors += stars[j][i];
 			}
 		}
-		Log.d(MainActivity.TAG,colors);
+		Log.d(MainActivity.TAG, colors);
+		return colors;
+	}
+	public static String getStarsInLog(int depth, int[][] stars)
+	{
+		String colors = "";
+		for (int i=0;i<10;i++)
+		{
+			for (int j=0;j<10;j++)
+			{
+				colors += stars[j][i];
+			}
+		}
+		return colors;
 	}
 	public static void showStarsInLog(int[][] stars)
 	{

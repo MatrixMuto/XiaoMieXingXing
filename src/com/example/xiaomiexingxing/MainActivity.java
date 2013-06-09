@@ -210,6 +210,7 @@ public class MainActivity extends Activity {
 			public void onClick(View arg0) {
 				if (filePath == null) return;
 				mStars = new Stars(getApplicationContext(),handler,filePath);
+				mStars.show(overlayImageView);
 				mStars.start();
 			}
 		});
