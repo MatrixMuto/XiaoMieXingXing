@@ -51,11 +51,11 @@ final class OverlayDisplayWindow {
     private final Listener mListener;
     private final String mTitle;
 
-    private final DisplayManager mDisplayManager;
+//    private final DisplayManager mDisplayManager;
     private final WindowManager mWindowManager;
 
 
-    private final Display mDefaultDisplay;
+//    private final Display mDefaultDisplay;
     //private final DisplayInfo mDefaultDisplayInfo = new DisplayInfo();
 
     private View mWindowContent;
@@ -89,12 +89,12 @@ final class OverlayDisplayWindow {
 //                com.android.internal.R.string.display_manager_overlay_display_title,
 //                mName, mWidth, mHeight, mDensityDpi);
 
-        mDisplayManager = (DisplayManager)context.getSystemService(
-                Context.DISPLAY_SERVICE);
+//        mDisplayManager = (DisplayManager)context.getSystemService(
+//                Context.DISPLAY_SERVICE);
         mWindowManager = (WindowManager)context.getSystemService(
                 Context.WINDOW_SERVICE);
 
-        mDefaultDisplay = mWindowManager.getDefaultDisplay();
+//        mDefaultDisplay = mWindowManager.getDefaultDisplay();
 //        updateDefaultDisplayInfo();
 
         createWindow();
@@ -110,9 +110,9 @@ final class OverlayDisplayWindow {
 
             clearLiveState();
             updateWindowParams();
-            TextView tv = new TextView(mContext);
-            tv.setText("nimeia");
-            mWindowManager.addView(tv, mWindowParams);
+            //TextView tv = new TextView(mContext);
+            //tv.setText("nimeia");
+            mWindowManager.addView(mWindowContent, mWindowParams);
             mWindowVisible = true;
         }
     }
@@ -178,14 +178,14 @@ final class OverlayDisplayWindow {
         mTitleTextView.setText(mTitle);
 
         mWindowParams = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY);
+                 WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
+                |WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY);
 //        mWindowParams.format=PixelFormat.RGBA_8888;
-        mWindowParams.flags |= WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
-        
+        mWindowParams.flags =   WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+//                | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
+//        |= WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+//        		 | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
 //        mWindowParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
 //        		WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE 
 //        		| WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;

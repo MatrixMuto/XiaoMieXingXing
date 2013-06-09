@@ -47,6 +47,18 @@ public class Utils {
 		}
 		
 	};
+	public static void showStarsInLog(int depth, int[][] stars)
+	{
+		String colors = "";
+		for (int i=0;i<10;i++)
+		{
+			for (int j=0;j<10;j++)
+			{
+				colors += stars[j][i];
+			}
+		}
+		Log.d(MainActivity.TAG,colors);
+	}
 	public static void showStarsInLog(int[][] stars)
 	{
 		for (int i=0;i<10;i++)
@@ -62,8 +74,8 @@ public class Utils {
 	public static void drawStars(boolean havegroup , ImageView imgView, int[][] stars, int[][] groupId, LinkedList<Point> action) {
 		// TODO Auto-generated method stub
 	
-		final int ww = 60;
-		final int hh = 60;
+		final int ww = 72;
+		final int hh = 72;
 		final int[] bData = new int[ww*10*hh*10];
 		for (int i=0;i<10;i++)
 		{
@@ -133,12 +145,12 @@ public class Utils {
 				 && (b >= 0xd6 && b <= 0xde) )
 			return xBLUE;
 		if  ( (r >= 0x44 && r <=0x4a)
-				 && (g >= 0xc5 && g <= 0xc9)
-				 && (b >= 0x37 && b <= 0x43) )
+				 && (g >= 0xc5 && g <= 0xcf)
+				 && (b >= 0x37 && b <= 0x4a) )
 			return xGREEN;
 		if  ( (r >= 0xc6 && r <=0xcf)
 				 && (g >= 0x35 && g <= 0x3f)
-				 && (b >= 0xbc && b <= 0xc0) )
+				 && (b >= 0xbc && b <= 0xca) )
 			return xMagenta;
 		
 		return xUNKNOWN;

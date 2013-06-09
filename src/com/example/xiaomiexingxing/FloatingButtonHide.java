@@ -4,6 +4,7 @@ package com.example.xiaomiexingxing;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
+import android.os.Handler.Callback;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Gravity;
@@ -15,9 +16,9 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
 
-public class Floatingfunc {
-    private static int x = 0;
-    private static int y = 560;
+public class FloatingButtonHide {
+    private static int x = 300;
+    private static int y = 200;
     
     private static float state = 0;
     private static float mTouchStartX = 0;
@@ -31,7 +32,9 @@ public class Floatingfunc {
     public static WindowManager.LayoutParams params = new WindowManager.LayoutParams();
     public static int TOOL_BAR_HIGH = 0;
     private static View view_obj = null;
-    public static void show(Context context, Window window, View floatingViewObj) {
+	private static Callback mCallback;
+    
+    public static void show(Context context, Window window, View floatingViewObj, Callback callback) {
         // ********************************Start**************************
         // LayoutInflater inflater =
         // LayoutInflater.from(getApplicationContext());
@@ -40,7 +43,8 @@ public class Floatingfunc {
         // (WindowManager)context.getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
         // *********************************End***************************
         close(context);
-        Floatingfunc.floatingViewObj = floatingViewObj;
+        mCallback = callback;
+        FloatingButtonHide.floatingViewObj = floatingViewObj;
 
         view_obj = floatingViewObj;
         
@@ -54,12 +58,12 @@ public class Floatingfunc {
         params.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
                 | WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
         params.flags  = LayoutParams.FLAG_NOT_FOCUSABLE;
-        params.flags |= LayoutParams.FLAG_NOT_TOUCHABLE;
+//        params.flags |= LayoutParams.FLAG_NOT_TOUCHABLE;
         params.flags |= LayoutParams.FLAG_NOT_TOUCH_MODAL;
 
         params.width = WindowManager.LayoutParams.WRAP_CONTENT;
         params.height = WindowManager.LayoutParams.WRAP_CONTENT;
-        params.alpha = 0.5f;
+        params.alpha = 80;
         params.gravity = Gravity.LEFT | Gravity.TOP;
 
         params.x = (int) x;
@@ -131,6 +135,7 @@ public class Floatingfunc {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     saveWindowParams();
+                    mCallback.handleMessage(null);
                     break;
             }
 
