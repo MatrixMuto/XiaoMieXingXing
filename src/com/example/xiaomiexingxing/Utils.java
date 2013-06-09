@@ -1,7 +1,10 @@
 package com.example.xiaomiexingxing;
 
+import java.util.LinkedList;
+
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.util.Log;
 import android.widget.ImageView;
 
@@ -56,11 +59,12 @@ public class Utils {
 			Log.d(MainActivity.TAG,colors);
 		}
 	}
-	public static void drawStars(boolean havegroup , ImageView imgView, int[][] stars, int[][] groupId) {
+	public static void drawStars(boolean havegroup , ImageView imgView, int[][] stars, int[][] groupId, LinkedList<Point> action) {
 		// TODO Auto-generated method stub
-		final int[] bData = new int[700*700];
+	
 		final int ww = 60;
 		final int hh = 60;
+		final int[] bData = new int[ww*10*hh*10];
 		for (int i=0;i<10;i++)
 		{
 			String colors = "";
@@ -86,7 +90,26 @@ public class Utils {
 			}
 			Log.d(MainActivity.TAG,colors);
 		}
-		
+		if (action != null)
+		{
+			for (Point p : action){
+				Log.d(MainActivity.TAG,"("+p.x+","+p.y+")");
+				for (int x = 0; x< ww; x++)
+				{
+					for(int y=0;y<10;y++)
+						bData[(p.y*hh+y)*ww*10+ p.x*ww +x] = Color.WHITE;
+					for (int y=hh-1;y>hh-11;y--)
+						bData[(p.y*hh+y)*ww*10+ p.x*ww +x] = Color.WHITE;
+				}
+				for (int y = 0; y< hh; y++)
+				{
+					for(int x=0;x<10;x++)
+						bData[(p.y*hh+y)*ww*10+ p.x*ww +x] = Color.WHITE;
+					for (int x=ww-1;x>ww-11;x--)
+						bData[(p.y*hh+y)*ww*10+ p.x*ww +x] = Color.WHITE;
+				}
+			}
+		}
 		Bitmap backBmp = Bitmap.createBitmap(bData, ww*10, hh*10, Bitmap.Config.ARGB_8888);
 		imgView.setImageBitmap(backBmp);
 		
@@ -97,24 +120,24 @@ public class Utils {
 		int r = pix >> 16 & 0xFF;
 		int g = pix >> 8 & 0xFF;
 		int b = pix & 0xFF;
-		if  ( (r >= 0xde && r <=0xe1)
-			 && (g >= 0x3a && g <= 0x3f)
-			 && (b >= 0x3e && b <= 0x44) )
+		if  ( (r >= 0xde && r <=0xef)
+			 && (g >= 0x3a && g <= 0x4a)
+			 && (b >= 0x3e && b <= 0x4a) )
 			return xRED;
-		if  ( (r >= 0xd2 && r <=0xd4)
+		if  ( (r >= 0xd2 && r <=0xd6)
 				 && (g >= 0xd0 && g <= 0xd4)
-				 && (b >= 0x42 && b <= 0x46) )
+				 && (b >= 0x42 && b <= 0x4a) )
 			return xYELLOW;
-		if  ( (r >= 0x56 && r <=0x5f)
-				 && (g >= 0x8e && g <= 0x95)
-				 && (b >= 0xd6 && b <= 0xdb) )
+		if  ( (r >= 0x56 && r <=0x63)
+				 && (g >= 0x8e && g <= 0x9a)
+				 && (b >= 0xd6 && b <= 0xde) )
 			return xBLUE;
 		if  ( (r >= 0x44 && r <=0x4a)
 				 && (g >= 0xc5 && g <= 0xc9)
-				 && (b >= 0x37 && b <= 0x3d) )
+				 && (b >= 0x37 && b <= 0x43) )
 			return xGREEN;
-		if  ( (r >= 0xc6 && r <=0xca)
-				 && (g >= 0x35 && g <= 0x3a)
+		if  ( (r >= 0xc6 && r <=0xcf)
+				 && (g >= 0x35 && g <= 0x3f)
 				 && (b >= 0xbc && b <= 0xc0) )
 			return xMagenta;
 		

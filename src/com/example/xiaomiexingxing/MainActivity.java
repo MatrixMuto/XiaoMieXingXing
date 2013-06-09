@@ -16,12 +16,16 @@ import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -36,44 +40,61 @@ public class MainActivity extends Activity {
 	ImageView imgView2 = null;
 	Bitmap yourSelectedImage = null;
 	Bitmap map = null;
+	TextView stv = null;
+	
+	
 	int stars[][] = new int[10][10];
+	int[][] groupId = new int[10][10];
 	//int[] stars = new int[10*10];//改用一维数组来标识
 	LinkedList<int[][]> curStack = new  LinkedList<int[][]>();
+	LinkedList<LinkedList<Point>> curAction = new LinkedList<LinkedList<Point>>();
 	LinkedList<int[][]> bestStack = new  LinkedList<int[][]>();
-	protected ListIterator bestIter;
-	TextView stv = null;
+	LinkedList<LinkedList<Point>>  bestAction = new LinkedList<LinkedList<Point>>();
+	protected int shangci = 0;
+	private String filePath;
+	
+	public static String kBestScore = "key_bestScore";
+	public static String kBestStack = "key_bestStack";
+	public static String kCurStars = "key_curStars";
+	public static String kRawBmp = "key_rawBmp";
 	int qMaxScore = 0;
-	int[][] groupId = new int[10][10];
+	
+	protected ListIterator bestIter;
+	
+	
 	public boolean mIamOk;
 	public static final String TAG = "XMXX";
 	Handler handler = new Handler(){
 			
 		public void handleMessage(android.os.Message msg) {
-			Log.d(TAG,"msg " + msg.what);
+			//Log.d(TAG,"msg " + msg.what);
 			if (msg.what == 1) 
-				Utils.drawStars(true,imgView,stars,groupId);
+				Utils.drawStars(true,imgView,stars,groupId,null);
 			else if (msg.what == 2)
-				Utils.drawStars(false,imgView,stars,groupId);
+				Utils.drawStars(false,imgView,stars,groupId,null);
 			else if (msg.what == 3)
 				stv.setText(""+msg.arg1);
 		};
 	};
-	protected int shangci = 0;
-	private String filePath;
-	
+	public ListIterator<LinkedList<Point>> bestActionIter;
 
+	
+	
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		Log.d(TAG,"onCreate"+filePath);
 		setContentView(R.layout.activity_main);
-		imgView = (ImageView) findViewById(R.id.imageView1);
+//		imgView = (ImageView) findViewById(R.id.imageView1);
+		imgView = new ImageView(this);
 		imgView2 = (ImageView) findViewById(R.id.imageView2);
 		stv = (TextView) findViewById(R.id.textView1);
-		filePath = "/storage/emulated/0/Pictures/Screenshots/Screenshot_2013-06-08-14-22-42.png";
-
-		init(filePath);
-		
+//		OverlayDisplayWindow window = new OverlayDisplayWindow(this, "xx", 300, 300, 0, Gravity.LEFT, null);
+//		window.show();
+//		TextView tv = new TextView(this);
+//		tv.setText("xjijiajifjsaifjadjafjaidf");
+		Floatingfunc.show(this, getWindow(), imgView);
 		Button btn = (Button) findViewById(R.id.button1);
 		btn.setOnClickListener(new OnClickListener() {
 			
@@ -91,15 +112,17 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(View arg0) {
-			   //for(int x=0; x<10;x++)
-					//System.arraycopy(bakStar[x], 0, stars[x], 0, 10);
-				if (shangci == 1) bestIter.previous();
-				shangci = 2;
+				Log.d(TAG,"previousIndex="+bestIter.previousIndex()
+						+ "nextIndex="+bestIter.nextIndex());
+				if (bestIter.hasNext())
+				{
+					if (bestActionIter.hasPrevious())
+						bestActionIter.previous();
+				}
 				if (bestIter.hasPrevious()) {
 					int[][] _stars = (int[][])bestIter.previous();
-					Utils.drawStars(false,imgView,_stars,groupId);
+					Utils.drawStars(false,imgView,_stars,groupId,null);
 				}
-				//Utils.drawStars(false,imgView,stars,groupId);
 			}
 		});
 		Button btnNext = (Button) findViewById(R.id.button3);
@@ -107,13 +130,14 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(View arg0) {
-				// TODO Auto-generated method stub
-				if (shangci == 2) bestIter.next();
-				shangci = 1;
-				
 				if (bestIter.hasNext()) {
 					int[][] _stars = (int[][])bestIter.next();
-					Utils.drawStars(false,imgView,_stars,groupId);
+					if ( bestActionIter.hasNext()) {
+						LinkedList<Point> action = bestActionIter.next();
+						Utils.drawStars(false,imgView,_stars,groupId,action);
+					}
+					else
+						Utils.drawStars(false,imgView,_stars,groupId,null);
 				}
 			}
 		});
@@ -142,7 +166,25 @@ public class MainActivity extends Activity {
 			}
 		});
 	}
+	@Override
+	protected void onResume() {
+		Log.d(TAG,"onResume"+filePath);
+		super.onResume();
+	}
+	@Override
+	protected void onPause() {
+		Log.d(TAG,"onPause"+filePath);
 
+		
+		super.onPause();
+	}
+	@Override
+	protected void onDestroy() {
+		// TODO Auto-generated method stub
+		Log.d(TAG,"onDestroy"+filePath);
+		super.onDestroy();
+	}
+	
 	private void init(String path)
 	{
 	    yourSelectedImage = BitmapFactory.decodeFile(path);
@@ -152,6 +194,7 @@ public class MainActivity extends Activity {
 			
 			map = Bitmap.createBitmap(pixels, 720, 720, Bitmap.Config.ARGB_8888);
 			imgView2.setImageBitmap(map);
+			imgView2.setVisibility(View.INVISIBLE);
 		}	
 		
 		for (int i=0;i<10;i++)
@@ -168,7 +211,7 @@ public class MainActivity extends Activity {
 			Log.d(TAG,colors);
 		}
 		
-		Utils.drawStars(false,imgView,stars,groupId);
+		Utils.drawStars(false,imgView,stars,groupId,null);
 	}
 	
 	protected void onActivityResult(int requestCode, int resultCode, Intent imageReturnedIntent) { 
@@ -205,7 +248,7 @@ public class MainActivity extends Activity {
 		public void run() {
 			// TODO Auto-generated method stub
 			mIamOk = false;
-			qMaxScore= 0 ;
+			qMaxScore = 0 ;
 			fun(0,0);
 			Log.e(TAG, qMaxScore+" "+"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 			handler.post(new Runnable() {
@@ -221,11 +264,11 @@ public class MainActivity extends Activity {
 		}
 		
 		void fun(int depth,int curScore){
-			Log.d(TAG,"fun"+depth+"cur:"+curScore
-					+" high:"+qMaxScore 
-					+" curS:"+curStack.size()
-					+" bestS:"+bestStack.size());
-			//Utils.showStarsInLog(mStars);
+//			Log.d(TAG,"fun"+depth+"cur:"+curScore
+//					+" high:"+qMaxScore 
+//					+" curS:"+curStack.size()
+//					+" bestS:"+bestStack.size());
+			if (depth==0) { Log.d(TAG,"xxxxxxxxxxx");Utils.showStarsInLog(mStars);}
 			if (mIamOk) return ;
 			HashMap<Integer, LinkedList<Point> > gro = new HashMap<Integer, LinkedList<Point> >();
 			int remain = findAll(gro);
@@ -262,7 +305,15 @@ public class MainActivity extends Activity {
 					bestStack.addLast(uuu);
 					//Utils.showStarsInLog(mStars);
 				}
+				
+				bestAction.clear();
+				for ( LinkedList<Point> action : curAction)
+				{
+					LinkedList<Point> newAction = new LinkedList<Point>(action);
+					bestAction.addLast(newAction);
+				}
 				bestIter = bestStack.listIterator();
+				bestActionIter = bestAction.listIterator();
 				curStack.removeLast();
 				return;
 			}
@@ -298,9 +349,11 @@ public class MainActivity extends Activity {
 			    gro.remove(key);
 			    aa= gro.entrySet();
 			    remove(val);
+				curAction.addLast(val);
 				
 			    int newScore = curScore + val.size() * val.size()*5;
 				fun(depth+1,newScore);
+			    curAction.removeLast();
 			    
 			    for(int x=0; x<10;x++)
 					System.arraycopy(bakStar[x], 0, mStars[x], 0, 10);
@@ -349,7 +402,7 @@ public class MainActivity extends Activity {
 							//int a = 1 / 0;
 							int a = g;
 							int b = groupId[x][y+1];
-							Log.d(TAG,"a="+a+" b="+b);
+//							Log.d(TAG,"a="+a+" b="+bs);
 							if (a>b) {
 								for(Point p: gro.get(a)){
 									groupId[p.x][p.y] = b;
@@ -365,7 +418,7 @@ public class MainActivity extends Activity {
 								gro.remove(b);
 							}
 						
-							Log.e(TAG,"error error error error error error ");
+//							Log.e(TAG,"error error error error error error ");
 						}
 					}
 					
@@ -398,7 +451,7 @@ public class MainActivity extends Activity {
 //				}
 //				Log.d(TAG,gro1);
 //			}
-			Log.d(TAG,"we have "+gro.size()+" choices!");
+			//Log.d(TAG,"we have "+gro.size()+" choices!");
 		//handler.sendEmptyMessage(1);
 			
 		
