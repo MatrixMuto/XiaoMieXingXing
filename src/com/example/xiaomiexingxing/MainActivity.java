@@ -43,9 +43,8 @@ public class MainActivity extends Activity {
 	TextView stv = null;
 	
 	
-	int stars[][] = new int[10][10];
+	int[][] stars = new int[10][10];
 	int[][] groupId = new int[10][10];
-	//int[] stars = new int[10*10];//改用一维数组来标识
 	LinkedList<int[][]> curStack = new  LinkedList<int[][]>();
 	LinkedList<LinkedList<Point>> curAction = new LinkedList<LinkedList<Point>>();
 	LinkedList<int[][]> bestStack = new  LinkedList<int[][]>();
